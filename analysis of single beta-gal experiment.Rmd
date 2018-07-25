@@ -51,7 +51,7 @@ source("betaGalAnalysisFunctions.R")
 ###To start the analysis, read in the data.
 
 ```{r}
-fileName <- "sampleData/6-6-18 LB32_LB73.xlsx" #Enter your Excel file here. Remember that tab completion will help you get the path & name correct
+fileName <- "myData/6-6-18 LB32_LB73.xlsx" #Enter your Excel file here. Remember that tab completion will help you get the path & name correct
 OD420data <- read_excel(fileName, sheet = 2)
 OD600data <- read_excel(fileName, sheet = 3)
 ```
