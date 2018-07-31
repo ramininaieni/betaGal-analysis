@@ -15,7 +15,7 @@ library(tidyverse)
 source("betaGalAnalysisFunctions.R")
 theme_set(theme_classic())
 
-fileNames <- c("myData/6-6-18 LB32_LB73.xlsx","myData/6-6-18 LB32_LB73 fake data for testing.xlsx")
+fileNames <- c("myData/RAN 7-29-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-24-18 BETA GAL RAN11, RAN12, RAN13.xlsx",  "myData/RAN 7-27-18 BETA GAL RAN11, RAN12.xlsx", "myData/RAN 7-26-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-28-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/CRD 7-17-18 OD420 and OD600 afternoon.xlsx", "myData/CRD 7-18-18 OD420 and OD600 morning.xlsx", "myData/CRD 7-19-18 OD420 and OD600 afternoon.xlsx","myData/RAN 7-27-18 BETA GAL RAN11, RAN12.xlsx")
 
 processedFiles <- map(fileNames, meanExpressionOneReplicate)
 
@@ -36,9 +36,19 @@ dayMeans <- combinedData %>%
 ggplot(dayMeans) + 
   geom_point(aes(x = RpoS, y = meanAcrossDays)) + 
   geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
-  facet_grid(.~strain)
+  facet_wrap(.~strain, ncol=2)
 
   
+```
+
+Single plot mean ± SE for RpoS level
+```{r}
+strainName <- "RAN11"
+oneStrainData <- subset(dayMeans,strain == strainName)
+ggplot(oneStrainData) + 
+  geom_point(aes(x = RpoS, y = meanAcrossDays)) + 
+  geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
+  facet_wrap(.~strain, ncol=2)
 ```
 ##Sensitivity
 
@@ -48,7 +58,7 @@ This function expects three RpoS levels, so for this example I'll subset out som
 
 ```{r}
 dataForSensitivity <- combinedData %>% 
-                        filter(RpoS == 0 | RpoS == 19 | RpoS == 94) 
+                        filter(RpoS == 0 | RpoS == 26 | RpoS == 89) 
 ```
 
 
@@ -57,6 +67,7 @@ Calculate sensitivity of a promoter.
 sensitivities <- dataForSensitivity %>% 
                   group_by(strain, date, experimenter) %>%
                   summarise(sensitivity = calculateSingleSens(RpoS, meanExpression))
+View(sensitivities)
 ```
 
 
@@ -65,7 +76,7 @@ Plot the data with a line to illustrate null expectation used to assess sensitiv
 
 ```{r}
 segmentEnds <- dayMeans %>%
-                filter(RpoS == 0 | RpoS == 94) %>%
+                #filter(RpoS == 0 | RpoS == 94) %>%
                 group_by(strain) %>%
                 summarise(
                   RpoS_min = min(RpoS),
@@ -80,7 +91,7 @@ segmentEnds <- dayMeans %>%
 If you designed your experiment with only three RpoS levels, delete the the `filter` step. Note that we have to go back a step to use use the `dayMeans` tibble.
 ```{r}
 dayMeans %>% 
-  filter(RpoS == 0 | RpoS == 19 | RpoS == 94) %>% 
+  #filter(RpoS == 0 | RpoS == 19 | RpoS == 94) %>% 
   ggplot() + 
   geom_point(aes(x = RpoS, y = meanAcrossDays, size = 4), show.legend = FALSE) + 
   geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
@@ -91,4 +102,26 @@ dayMeans %>%
                  
 ```
 
+```{r}
+strainName <- "RAN11"
+oneStrainData <- subset(dayMeans,strain == strainName)
+oneStrainSegments <- subset(segmentEnds, strain == strainName)
+oneStrainData %>%
+  ggplot() + 
+  geom_point(aes(x = RpoS, y = meanAcrossDays, size = 4), show.legend = FALSE) + 
+  geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
+  facet_grid(.~strain) +
+  geom_segment(data = oneStrainSegments, mapping = aes(x = RpoS_min, xend = RpoS_max, y = expression_min, yend = expression_max)) +
+  labs(x = "% of wild-type RpoS", y = "LacZ expression (Miller Units)")
+```
 
+Sensitivity Value Distribution
+```{r}
+strainName <- "RAN11"
+hist(sensitivities$sensitivity[sensitivities$strain == strainName],main = "Strain Sensitivity Distribution",xlab = strainName)
+```
+
+Swaps t-test
+```{r}
+
+```

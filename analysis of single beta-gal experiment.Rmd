@@ -20,9 +20,9 @@ Add seven more columns immediately to the right: experimenter, date, strain, Rpo
 
 Fill in **each** cell in these seven columns:  
 
-1. For **experimenter**, give your initials. Please always use the same initials as you use for strain names.
+1. For **experimenter**, give your initials. Please always usethe same initials as you use for strain names.
 2. For **date**, please give them in format YYYY-MM-DD, ie "2018-06-07". This date should correspond to the date noted in your lab notebook when this experiment was done.
-3. For **strain**, please use your personal strain number (I.e LB32, ANS138, etc...). Wells used as a blank should be called "blank". If you are conducting biological replicates with another person who has the same strain stored under a different name, then please consult with this person and decide on one strain name to use. This will make it easier when you use the "analysis of multiple beta-gal experiments" Rmd file because the program creates plots by strain name and may plot your replicates and your partner's replicates on different plots due to the difference in strain name. Also even if you might be using a different strain name, please put your own initials in the "experimenter" section of your table. 
+3. For **strain**, please use your personal strain number (I.e LB32, ANS138, etc...). Wells used as a blank should be called "blank".If you are conducting biological replicates with another person who has the same strain stored under a different name, then please consult with this person and decide on one strain name to use. This will make it easier when you use the "analysis of multiple beta-gal experiments" Rmd file because the program creates plots by strain name and may plot your replicates and your partner's replicates on different plots due to the difference in strain name. Also, even if you might be using a different strain name, please put your own initials in the "experimenter" section of your table.   
 4. For **RpoS**, please give the % of wild-type in your condition, as determined by previous western blotting experiments. Wild-type = 100, knock-out = 0. Enter NA for wells used as a blank.  
 5. For **dilutionFactor**, if you diluted your cells 1:n before adding them to the reaction/plate, give the value of n. (E.g. if you diluted your cells 1:100 before adding a volume to be assayed, enter 100 here.) If you did not dilute your cells, enter 1. Enter NA for wells used as a blank.
 6. For **volumeAssayed**, give the volume of (possibly diluted) cells in mL you added to the tube when you assayed. This is usually 0.1 or 0.5. Enter NA for wells used as a blank.
@@ -51,7 +51,7 @@ source("betaGalAnalysisFunctions.R")
 ###To start the analysis, read in the data.
 
 ```{r}
-fileName <- "myData/RAN 7-24-18 BETA GAL RAN11, RAN12, RAN13.xlsx" #Enter your Excel file here. Remember that tab completion will help you get the path & name correct
+fileName <- "myData/RAN 7-29-18 BETA GAL RAN11, RAN12, RAN13.xlsx" #Enter your Excel file here. Remember that tab completion will help you get the path & name correct
 OD420data <- read_excel(fileName, sheet = 2)
 OD600data <- read_excel(fileName, sheet = 3)
 ```
@@ -89,6 +89,13 @@ Two plots are shown, one using facets to create a plot for each strain, the othe
 ```{r}
 ggplot(combinedData) + geom_point(aes(x=RpoS, y=`Miller Units`)) + facet_grid(.~strain) 
 ggplot(combinedData) + geom_point(aes(x=RpoS, y=`Miller Units`, color=strain))
+```
+
+```{r}
+strainName <- "CRD39"
+oneStrainData <- subset(combinedData,strain == strainName)
+ggplot(oneStrainData) + geom_point(aes(x=RpoS, y=`Miller Units`)) + facet_grid(.~strain) 
+ggplot(oneStrainData) + geom_point(aes(x=RpoS, y=`Miller Units`, color=strain))
 ```
 
 ### Calculate and save the means at each concentration. 

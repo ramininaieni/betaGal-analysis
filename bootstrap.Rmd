@@ -1,0 +1,98 @@
+---
+title: "Bootstrap"
+author: "Lakshmi Batachari"
+date: "July 19, 2015"
+output: word_document
+---
+```{r, message = FALSE}
+library(readxl)
+library(tidyverse)
+theme_set(theme_classic())
+```
+
+Import your files here:
+```{r}
+
+fileNames <- c("myData/CRD 7-11-18 OD420 and OD600.xlsx","myData/CRD 7-12-18 OD420 and OD600.xlsx","myData/CRD 7-13-18 OD420 and OD600.xlsx","myData/CRD 7-17-18 OD420 and OD600 morning.xlsx","myData/CRD 7-17-18 OD420 and OD600 afternoon.xlsx","myData/CRD 7-18-18 OD420 and OD600 morning.xlsx","myData/CRD 7-18-18 OD420 and OD600 afternoon.xlsx","myData/CRD 7-19-18 OD420 and OD600 morning.xlsx","myData/CRD 7-19-18 OD420 and OD600 afternoon.xlsx","myData/CRD 7-20-18 OD420 and OD600 afternoon.xlsx","myData/CRD 7-24-18 OD420 and OD600.xlsx","myData/CRD 7-25-18 OD420 and OD600.xlsx")
+processedFiles <- map(fileNames, meanExpressionOneReplicate)
+
+combinedData <- bind_rows(processedFiles)
+```
+
+Create vectors/variables we'll need in the next step
+```{r}
+#set number of randomizations
+sampleSize <- 10000
+
+#Set number of biological replicates
+repSize <- 8
+
+#create vector for the 26% RpoS level estimates
+linear26Est <- vector(length=sampleSize)
+
+#define strain
+Strain <- "CRD31"
+
+#store mean expression values for the selected strain at 0%, 26%, and 89%
+rpoS0 <- subset(combinedData, RpoS == 0 & strain == Strain, select = c(meanExpression))
+rpoS26 <-subset(combinedData, RpoS == 26 & strain == Strain, select = c(meanExpression))
+rpoS89 <-subset(combinedData, RpoS== 89 & strain == Strain, select = c(meanExpression))
+
+#convert expression values into vector
+rpos0Vect <- as.numeric(as.character(rpoS0$meanExpression))
+rpos26Vect <- as.numeric(as.character(rpoS26$meanExpression))
+rpos89Vect <- as.numeric(as.character(rpoS89$meanExpression))
+
+#create vectors to store randomly sampled expression values at 0% and 89%
+zeroPercentC <- vector(mode = "numeric", length= repSize)
+eightyNinePercentC <- vector(mode = "numeric", length= repSize)
+```
+
+
+Now we sample from the data 10,000 times:
+```{r}
+#conduct resampling 10,000 times
+for (i in 1:sampleSize) 
+{
+replicates <- sample(c(1:repSize), replace = TRUE, repSize) #sample numbers the same number of times as biological replicates with replacement. This vector will be used to randomly pick an expression value from the vector containing all our of experimental values
+
+#randomly samples biological replicate number expression values each at 0% and 89%
+for (j in 1:repSize) 
+{
+#choose an expresion value from 0% and 89% RpoS by indexing with the number that was randomly sampled and stored in the vector 'replicates'
+  
+zeroPercentC[j] <- rpos0Vect[replicates[j]] 
+eightyNinePercentC[j] <- rpos89Vect[replicates[j]] 
+
+}
+#determines median of expression values at the 0% and 89% level
+zeroPercent <- median(zeroPercentC) 
+eightyNinePercent <- median(eightyNinePercentC)
+
+#obtains a linear fit from the median of the sampled 0% level to the median of the 89% level 
+fit <- lm(c(zeroPercent, eightyNinePercent) ~ c(0, 89))
+
+#estimates expression at the 26% RpoS level using the slope and y-intercept of the linear fit, stores estimates in vector
+estimate <- 26*coef(fit)[2] + coef(fit)[1]
+linear26Est[i] <- estimate
+}
+
+#sorts 26% level estimates from lowest to highest
+linear26Est <- sort(linear26Est)
+
+#calculates lower and upper bounds for the 95% confidence interval of the expression at 26% RpoS and prints
+lowerBound <- linear26Est[sampleSize*0.025]
+upperBound <- linear26Est[sampleSize*0.975]
+
+lowerBound
+upperBound
+
+#calculates p-value for sensitivity by determining probability that the median 26% RpoS value will fall outside of the 95% confidence interval
+if (median(rpos26Vect) > median(linear26Est)){ #checks so that a p-value will always be generated instead of 1-p
+  1-sum(median(rpos26Vect) > linear26Est)/sampleSize
+} else {
+  sum(median(rpos26Vect) > linear26Est)/sampleSize
+}
+hist(linear26Est)
+
+```
