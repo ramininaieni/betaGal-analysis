@@ -15,7 +15,7 @@ library(tidyverse)
 source("betaGalAnalysisFunctions.R")
 theme_set(theme_classic())
 
-fileNames <- c("myData/RAN 7-29-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-24-18 BETA GAL RAN11, RAN12, RAN13.xlsx",  "myData/RAN 7-27-18 BETA GAL RAN11, RAN12.xlsx", "myData/RAN 7-26-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-28-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/CRD 7-17-18 OD420 and OD600 afternoon.xlsx", "myData/CRD 7-18-18 OD420 and OD600 morning.xlsx", "myData/CRD 7-19-18 OD420 and OD600 afternoon.xlsx","myData/RAN 7-27-18 BETA GAL RAN11, RAN12.xlsx")
+fileNames <- c("myData/RAN 7-24-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-26-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-27-18 BETA GAL RAN11, RAN12.xlsx", "myData/RAN 7-28-18 BETA GAL RAN11, RAN12, RAN13.xlsx", "myData/RAN 7-29-18 BETA GAL RAN11, RAN12, RAN13.xlsx","myData/CRD 7-17-18 OD420 and OD600 afternoon.xlsx", "myData/CRD 7-18-18 OD420 and OD600 morning.xlsx", "myData/CRD 7-19-18 OD420 and OD600 afternoon.xlsx")
 
 processedFiles <- map(fileNames, meanExpressionOneReplicate)
 
@@ -67,6 +67,12 @@ Calculate sensitivity of a promoter.
 sensitivities <- dataForSensitivity %>% 
                   group_by(strain, date, experimenter) %>%
                   summarise(sensitivity = calculateSingleSens(RpoS, meanExpression))
+meanSensitivities <- sensitivities %>%
+                  group_by(strain) %>% 
+                  summarize(meanSensitivity = mean(sensitivity), se = sd(sensitivity)/sqrt(length(sensitivity)))%>%
+              mutate(upperError = meanSensitivity + se, lowerError = meanSensitivity - se)
+
+show(meanSensitivities)
 View(sensitivities)
 ```
 
@@ -103,7 +109,7 @@ dayMeans %>%
 ```
 
 ```{r}
-strainName <- "RAN11"
+strainName <- "CRD38"
 oneStrainData <- subset(dayMeans,strain == strainName)
 oneStrainSegments <- subset(segmentEnds, strain == strainName)
 oneStrainData %>%
@@ -117,7 +123,7 @@ oneStrainData %>%
 
 Sensitivity Value Distribution
 ```{r}
-strainName <- "RAN11"
+strainName <- "CRD38"
 hist(sensitivities$sensitivity[sensitivities$strain == strainName],main = "Strain Sensitivity Distribution",xlab = strainName)
 ```
 
